@@ -1,0 +1,11 @@
+# ディレクトリの除外
+Library/
+Temp/
+Logs/
+UserSettings/
+.vscode/
+
+# ファイルの除外
+Assembly-CSharp.csproj
+adv_ver2.sln
+adv_ver2
