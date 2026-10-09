@@ -80,6 +80,17 @@ public class SaveLoad : MonoBehaviour
         return saveDataList;
     }
 
+    public void DeleteSaveData(int index)
+    {
+        SaveDataList saveDataList = LoadSaveDataList();
+        if (index < 0 || index >= saveDataList.saveDatas.Count) return;
+
+        // 削除すると後ろのデータが前に詰まる
+        saveDataList.saveDatas.RemoveAt(index);
+        File.WriteAllText(saveFilePath, JsonUtility.ToJson(saveDataList, true));
+        Debug.Log("セーブデータを削除しました: " + index);
+    }
+
     public void DeleteAllSaveData()
     {
         if (File.Exists(saveFilePath))

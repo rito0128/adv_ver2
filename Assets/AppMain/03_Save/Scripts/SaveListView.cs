@@ -27,6 +27,7 @@ public class SaveListView : MonoBehaviour
         {
             SaveSlotView slot = Instantiate(slotPrefab, scrollRect.content);
             slot.name = "SaveBar" + (i + 1);
+            if (i > 0) slot.Setup(i - 1, OnClickDeleteSlot); // バー2がsaveDatas[0]
             slots.Add(slot);
         }
 
@@ -76,6 +77,13 @@ public class SaveListView : MonoBehaviour
         {
             Refresh();
         }
+    }
+
+    // 各バーの削除ボタンから呼ばれる
+    void OnClickDeleteSlot(int dataIndex)
+    {
+        saveLoad.DeleteSaveData(dataIndex);
+        Refresh();
     }
 
     // 全件削除ボタンのOnClickに登録する
