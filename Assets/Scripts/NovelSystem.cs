@@ -45,10 +45,15 @@ public class NovelSystem : MonoBehaviour
         DisplayCurrentSentence();
     }
 
-    void LoadJSON()
+    // 進行状況を最初に戻す（タイトルからゲームを始めるときに呼ぶ）
+    public static void ResetProgress()
     {
         placeIndex = 0;
         mesageIndex = 0;
+    }
+
+    void LoadJSON()
+    {
         // Resources/scenario.json を読み込む
         TextAsset jsonFile = Resources.Load<TextAsset>("scenario");
         
