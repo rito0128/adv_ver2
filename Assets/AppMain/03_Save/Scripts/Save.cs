@@ -5,23 +5,34 @@ using System;
 
 public class SaveLoad : MonoBehaviour
 {
+    public const int MaxSaveCount = 9; // 保存できる最大件数（バー2〜10）
+
     private string saveFilePath;
 
     // Start内でパスを設定
-    void Awake() 
+    void Awake()
     {
         saveFilePath = Path.Combine(Application.persistentDataPath, "savedata.json");
     }
 
-    public void SaveGame()
+    public bool SaveGame()
     {
         SaveData newSaveData = new SaveData();
-        SaveDataList saveDataList = new SaveDataList();
+        SaveDataList saveDataList = LoadSaveDataList();
         DateTime now = DateTime.Now; // 現在時刻を取得
 
-        // シナリオファイルを読み込む
-        TextAsset jsonFile = Resources.Load<TextAsset>("scenario");
-        NovelSystem.sectionData = JsonUtility.FromJson<SectionData>(jsonFile.text);
+        if (saveDataList.saveDatas.Count >= MaxSaveCount)
+        {
+            Debug.LogWarning("セーブデータが満杯です");
+            return false;
+        }
+
+        // シナリオファイルを読み込む（未読み込みのときのみ）
+        if (NovelSystem.sectionData == null)
+        {
+            TextAsset jsonFile = Resources.Load<TextAsset>("scenario");
+            NovelSystem.sectionData = JsonUtility.FromJson<SectionData>(jsonFile.text);
+        }
 
         Debug.Log("セーブを始めます");
 
@@ -29,26 +40,11 @@ public class SaveLoad : MonoBehaviour
         newSaveData.saveDate = now.ToString("yyyy/MM/dd HH:mm:ss");
         newSaveData.placeIndex = NovelSystem.placeIndex;
         newSaveData.mesageIndex = NovelSystem.mesageIndex;
-        newSaveData.currentTextSnippet = NovelSystem.sectionData.sectionContent[newSaveData.placeIndex].scenarioContents[newSaveData.mesageIndex].Text.Substring(0, 5);
+        string text = NovelSystem.sectionData.sectionContent[newSaveData.placeIndex].scenarioContents[newSaveData.mesageIndex].Text;
+        newSaveData.currentTextSnippet = text.Substring(0, Mathf.Min(5, text.Length));
 
-        if (File.Exists(saveFilePath))
-        {
-            string jsonText = File.ReadAllText(saveFilePath);
-            if (!string.IsNullOrWhiteSpace(jsonText))
-            {
-                try 
-                {
-                    // jsonファイルを読み込む
-                    saveDataList = JsonUtility.FromJson<SaveDataList>(jsonText);
-                    Debug.Log("セーブファイルを開きました");
-                }
-                catch (System.ArgumentException e)
-                {
-                    Debug.LogWarning("既存のJSONが破損しているため、新規作成します: " + e.Message);
-                }
-            }
-        }
-        saveDataList.saveDatas.Add(newSaveData);
+        // 最新のデータを先頭に追加
+        saveDataList.saveDatas.Insert(0, newSaveData);
 
         // jsonファイルにして保存
         string updatedJson = JsonUtility.ToJson(saveDataList, true);
@@ -57,6 +53,51 @@ public class SaveLoad : MonoBehaviour
 
         Debug.Log("セーブが完了しました");
         Debug.Log(saveFilePath);
+        return true;
+    }
+
+    public SaveDataList LoadSaveDataList()
+    {
+        SaveDataList saveDataList = new SaveDataList();
+
+        if (File.Exists(saveFilePath))
+        {
+            string jsonText = File.ReadAllText(saveFilePath);
+            if (!string.IsNullOrWhiteSpace(jsonText))
+            {
+                try
+                {
+                    // jsonファイルを読み込む
+                    saveDataList = JsonUtility.FromJson<SaveDataList>(jsonText) ?? new SaveDataList();
+                    Debug.Log("セーブファイルを開きました");
+                }
+                catch (System.ArgumentException e)
+                {
+                    Debug.LogWarning("既存のJSONが破損しているため、新規作成します: " + e.Message);
+                }
+            }
+        }
+        return saveDataList;
+    }
+
+    public void DeleteSaveData(int index)
+    {
+        SaveDataList saveDataList = LoadSaveDataList();
+        if (index < 0 || index >= saveDataList.saveDatas.Count) return;
+
+        // 削除すると後ろのデータが前に詰まる
+        saveDataList.saveDatas.RemoveAt(index);
+        File.WriteAllText(saveFilePath, JsonUtility.ToJson(saveDataList, true));
+        Debug.Log("セーブデータを削除しました: " + index);
+    }
+
+    public void DeleteAllSaveData()
+    {
+        if (File.Exists(saveFilePath))
+        {
+            File.Delete(saveFilePath);
+            Debug.Log("セーブデータをすべて削除しました");
+        }
     }
 
     // public void LoadGame()
@@ -74,7 +115,7 @@ public class SaveLoad : MonoBehaviour
     //     {
     //         // リストの最後（最新）のデータを取得
     //         SaveData latest = SaveDateList.saveDatas[SaveDateList.saveDatas.Count - 1];
-            
+
     //         NovelSystem.placeIndex = latest.placeIndex;
     //         NovelSystem.mesageIndex = latest.mesageIndex;
 

@@ -11,6 +11,6 @@ public class TitleView : MonoBehaviour
  
     void Update()
     {
-        Debug.Log( "Updata!!" );
+        // Debug.Log( "Updata!!" );
     }
 }
